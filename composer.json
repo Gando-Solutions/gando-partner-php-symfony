@@ -1,0 +1,48 @@
+{
+    "name": "gando/partner-symfony",
+    "description": "Symfony bundle for the Gando Partner PHP SDK",
+    "type": "symfony-bundle",
+    "license": "MIT",
+    "autoload": {
+        "psr-4": {
+            "Gando\\Partner\\Symfony\\": "src/"
+        }
+    },
+    "autoload-dev": {
+        "psr-4": {
+            "Gando\\Partner\\Symfony\\Tests\\": "tests/"
+        }
+    },
+    "require": {
+        "php": ">=8.2",
+        "gando/partner": "^0.1.5",
+        "symfony/config": "^6.4 || ^7.0",
+        "symfony/dependency-injection": "^6.4 || ^7.0",
+        "symfony/http-kernel": "^6.4 || ^7.0"
+    },
+    "require-dev": {
+        "phpstan/phpstan": "^2.1",
+        "phpunit/phpunit": "^11.5",
+        "symfony/http-client": "^6.4 || ^7.0"
+    },
+    "suggest": {
+        "symfony/framework-bundle": "Required to use the bundle in a Symfony application.",
+        "symfony/http-client": "Recommended — wires the SDK to Symfony's HTTP client via PSR-18."
+    },
+    "minimum-stability": "stable",
+    "prefer-stable": true,
+    "config": {
+        "sort-packages": true,
+        "allow-plugins": {
+            "php-http/discovery": true
+        }
+    },
+    "extra": {
+        "branch-alias": {
+            "dev-main": "0.1.x-dev"
+        }
+    },
+    "scripts": {
+        "test": "phpunit"
+    }
+}
