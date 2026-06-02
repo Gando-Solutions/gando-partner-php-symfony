@@ -9,6 +9,7 @@ use Gando\Partner\Connect\UrlBuilder;
 use Gando\Partner\Symfony\DependencyInjection\GandoPartnerExtension;
 use PHPUnit\Framework\TestCase;
 use Symfony\Component\DependencyInjection\ContainerBuilder;
+use Symfony\Component\DependencyInjection\Reference;
 
 final class GandoPartnerExtensionTest extends TestCase
 {
@@ -55,6 +56,29 @@ final class GandoPartnerExtensionTest extends TestCase
         $this->compile([
             'api_key' => 'invalid_key',
         ]);
+    }
+
+    public function testWrapsCacheAppInPsr16AdapterWhenAvailable(): void
+    {
+        if (! class_exists('Symfony\Component\Cache\Psr16Cache')) {
+            self::markTestSkipped('Symfony cache component is not installed.');
+        }
+
+        $container = new ContainerBuilder();
+        $container->register('cache.app', \ArrayObject::class);
+
+        $extension = new GandoPartnerExtension();
+        $extension->load([[
+            'api_key' => 'gando_pk_test_key',
+        ]], $container);
+
+        self::assertTrue($container->hasDefinition('gando.partner.psr16_cache'));
+        $psr16Definition = $container->getDefinition('gando.partner.psr16_cache');
+        self::assertSame('Symfony\Component\Cache\Psr16Cache', $psr16Definition->getClass());
+        self::assertEquals([new Reference('cache.app')], $psr16Definition->getArguments());
+
+        $clientDefinition = $container->getDefinition('gando.partner.api.client');
+        self::assertEquals(new Reference('gando.partner.psr16_cache'), $clientDefinition->getArgument('$cache'));
     }
 
     /**

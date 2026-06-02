@@ -86,7 +86,7 @@ final class GandoPartnerExtension extends Extension
             '$httpClient' => null,
             '$requestFactory' => null,
             '$logger' => new Reference('logger', ContainerBuilder::NULL_ON_INVALID_REFERENCE),
-            '$cache' => new Reference('cache.app', ContainerBuilder::NULL_ON_INVALID_REFERENCE),
+            '$cache' => null,
             '$events' => new Reference('event_dispatcher', ContainerBuilder::NULL_ON_INVALID_REFERENCE),
             '$baseUrl' => $config['base_url'],
         ];
@@ -106,6 +106,17 @@ final class GandoPartnerExtension extends Extension
             if ($container->has('Psr\Http\Message\RequestFactoryInterface')) {
                 $arguments['$requestFactory'] = new Reference('Psr\Http\Message\RequestFactoryInterface');
             }
+        }
+
+        if (
+            class_exists('Symfony\Component\Cache\Psr16Cache')
+            && ($container->hasDefinition('cache.app') || $container->hasAlias('cache.app'))
+        ) {
+            $psr16Definition = new Definition('Symfony\Component\Cache\Psr16Cache', [new Reference('cache.app')]);
+            $psr16Definition->setPublic(false);
+            $container->setDefinition('gando.partner.psr16_cache', $psr16Definition);
+
+            $arguments['$cache'] = new Reference('gando.partner.psr16_cache');
         }
 
         $definition = new Definition(Client::class, $arguments);
