@@ -94,10 +94,7 @@ final class GandoWebhookListenerTest extends TestCase
         );
     }
 
-    /**
-     * @param array{0: object, 1: string} $controller
-     */
-    private function createControllerEvent(Request $request, array $controller): ControllerEvent
+    private function createControllerEvent(Request $request, callable $controller): ControllerEvent
     {
         $kernel = $this->createMock(HttpKernelInterface::class);
 

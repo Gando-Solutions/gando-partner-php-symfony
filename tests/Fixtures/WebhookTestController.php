@@ -8,13 +8,11 @@ use Gando\Partner\Symfony\Attribute\GandoWebhook;
 use Gando\Partner\Symfony\EventListener\GandoWebhookListener;
 use Symfony\Component\HttpFoundation\Request;
 use Symfony\Component\HttpFoundation\Response;
-use Symfony\Component\Routing\Attribute\Route;
 
 final class WebhookTestController
 {
     public static bool $reached = false;
 
-    #[Route('/webhook-protected', name: 'webhook_protected', methods: ['POST'])]
     #[GandoWebhook]
     public function protected(Request $request): Response
     {
@@ -25,7 +23,6 @@ final class WebhookTestController
         ]);
     }
 
-    #[Route('/webhook-open', name: 'webhook_open', methods: ['POST'])]
     public function open(): Response
     {
         self::$reached = true;
