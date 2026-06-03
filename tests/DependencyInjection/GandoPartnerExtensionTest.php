@@ -6,10 +6,14 @@ namespace Gando\Partner\Symfony\Tests\DependencyInjection;
 
 use Gando\Partner\Api\Client;
 use Gando\Partner\Connect\UrlBuilder;
+use Gando\Partner\Symfony\Controller\GandoWebhookController;
 use Gando\Partner\Symfony\DependencyInjection\GandoPartnerExtension;
+use Gando\Partner\Symfony\Webhook\Verifier;
 use PHPUnit\Framework\TestCase;
 use Symfony\Component\DependencyInjection\ContainerBuilder;
 use Symfony\Component\DependencyInjection\Reference;
+use Symfony\Component\EventDispatcher\EventDispatcher;
+use Symfony\Component\EventDispatcher\EventDispatcherInterface;
 
 final class GandoPartnerExtensionTest extends TestCase
 {
@@ -58,6 +62,33 @@ final class GandoPartnerExtensionTest extends TestCase
         ]);
     }
 
+    public function testRegistersWebhookControllerWhenSecretConfigured(): void
+    {
+        $container = $this->load([
+            'api_key' => 'gando_pk_test_key',
+            'webhooks' => [
+                'secret' => 'whsec_test_webhook_secret',
+            ],
+        ]);
+
+        self::assertTrue($container->hasDefinition(GandoWebhookController::class));
+        self::assertTrue($container->hasAlias('gando.partner.webhook_controller'));
+
+        $verifierDefinition = $container->getDefinition(Verifier::class);
+        self::assertSame('whsec_test_webhook_secret', $verifierDefinition->getArgument('$secret'));
+        self::assertSame('/webhooks/gando', $container->getParameter('gando_partner.webhooks.path'));
+    }
+
+    public function testRemovesWebhookControllerWhenSecretMissing(): void
+    {
+        $container = $this->load([
+            'api_key' => 'gando_pk_test_key',
+        ]);
+
+        self::assertFalse($container->hasDefinition(GandoWebhookController::class));
+        self::assertFalse($container->hasAlias('gando.partner.webhook_controller'));
+    }
+
     public function testWrapsCacheAppInPsr16AdapterWhenAvailable(): void
     {
         if (! class_exists('Symfony\Component\Cache\Psr16Cache')) {
@@ -86,10 +117,30 @@ final class GandoPartnerExtensionTest extends TestCase
      */
     private function compile(array $config): ContainerBuilder
     {
+        $container = $this->load($config);
+        $container->compile();
+
+        return $container;
+    }
+
+    /**
+     * @param array<string, mixed> $config
+     */
+    private function load(array $config): ContainerBuilder
+    {
         $container = new ContainerBuilder();
+
+        if (! $container->hasDefinition('event_dispatcher')) {
+            $container->register('event_dispatcher', EventDispatcher::class)->setPublic(true);
+            $container->setAlias(EventDispatcherInterface::class, 'event_dispatcher');
+        }
+
         $extension = new GandoPartnerExtension();
         $extension->load([$config], $container);
-        $container->compile();
+
+        if (! $container->hasAlias(EventDispatcherInterface::class)) {
+            $container->setAlias(EventDispatcherInterface::class, 'event_dispatcher');
+        }
 
         return $container;
     }

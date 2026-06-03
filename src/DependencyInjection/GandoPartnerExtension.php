@@ -6,8 +6,12 @@ namespace Gando\Partner\Symfony\DependencyInjection;
 
 use Gando\Partner\Api\Client;
 use Gando\Partner\Connect\UrlBuilder;
+use Gando\Partner\Symfony\Controller\GandoWebhookController;
 use Gando\Partner\Symfony\EventListener\GandoWebhookListener;
 use Gando\Partner\Symfony\EventListener\WebhookSignatureExceptionListener;
+use Gando\Partner\Symfony\EventSubscriber\WebhookTypedEventSubscriber;
+use Gando\Partner\Symfony\Webhook\Deduplicator;
+use Gando\Partner\Symfony\Webhook\Verifier;
 use Symfony\Component\Config\FileLocator;
 use Symfony\Component\DependencyInjection\ContainerBuilder;
 use Symfony\Component\DependencyInjection\Definition;
@@ -20,7 +24,7 @@ final class GandoPartnerExtension extends Extension
     public function load(array $configs, ContainerBuilder $container): void
     {
         $configuration = new Configuration();
-        /** @var array{api_key: string, base_url: string, connect: array{secret: ?string, partner_slug: ?string, base_url: string}, webhooks: array{secret: ?string, tolerance_seconds: int}} $config */
+        /** @var array{api_key: string, base_url: string, connect: array{secret: ?string, partner_slug: ?string, base_url: string}, webhooks: array{secret: ?string, tolerance_seconds: int, path: string, dedup_ttl_seconds: int}} $config */
         $config = $this->processConfiguration($configuration, $configs);
 
         $this->validateApiKeyPrefix($config['api_key']);
@@ -29,6 +33,8 @@ final class GandoPartnerExtension extends Extension
         $loader->load('services.php');
 
         $container->setParameter('gando_partner.webhooks.tolerance_seconds', $config['webhooks']['tolerance_seconds']);
+        $container->setParameter('gando_partner.webhooks.dedup_ttl_seconds', $config['webhooks']['dedup_ttl_seconds']);
+        $container->setParameter('gando_partner.webhooks.path', $config['webhooks']['path']);
 
         $clientDefinition = $this->createApiClientDefinition($container, $config);
         $container->setDefinition('gando.partner.api.client', $clientDefinition);
@@ -63,11 +69,27 @@ final class GandoPartnerExtension extends Extension
                 ->setArgument('$defaultSecret', $webhookSecret)
                 ->setArgument('$toleranceSeconds', $config['webhooks']['tolerance_seconds']);
             $container->getDefinition(WebhookSignatureExceptionListener::class)->setPublic(true);
+
+            $container->getDefinition(Verifier::class)
+                ->setArgument('$secret', $webhookSecret)
+                ->setArgument('$toleranceSeconds', $config['webhooks']['tolerance_seconds']);
+
+            if ($container->hasDefinition('gando.partner.psr16_cache')) {
+                $container->getDefinition(Deduplicator::class)
+                    ->setArgument('$cache', new Reference('gando.partner.psr16_cache'));
+            }
         } else {
             $container->getDefinition(GandoWebhookListener::class)
                 ->setArgument('$defaultSecret', null)
                 ->setArgument('$toleranceSeconds', $config['webhooks']['tolerance_seconds']);
             $container->removeDefinition(WebhookSignatureExceptionListener::class);
+            $container->removeDefinition(GandoWebhookController::class);
+            $container->removeDefinition(Verifier::class);
+            $container->removeDefinition(WebhookTypedEventSubscriber::class);
+
+            if ($container->hasAlias('gando.partner.webhook_controller')) {
+                $container->removeAlias('gando.partner.webhook_controller');
+            }
         }
     }
 
@@ -161,9 +183,9 @@ final class GandoPartnerExtension extends Extension
 
     private function validateWebhookSecretPrefix(string $secret): void
     {
-        if (! str_starts_with($secret, 'whsec_')) {
+        if (! str_starts_with($secret, 'whsec_') && ! str_starts_with($secret, 'gando_whsec_')) {
             throw new \InvalidArgumentException(
-                'gando_partner.webhooks.secret must start with "whsec_".',
+                'gando_partner.webhooks.secret must start with "whsec_" or "gando_whsec_".',
             );
         }
     }

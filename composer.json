@@ -23,11 +23,14 @@
     "require-dev": {
         "phpstan/phpstan": "^2.1",
         "phpunit/phpunit": "^11.5",
-        "symfony/http-client": "^6.4 || ^7.0"
+        "symfony/http-client": "^6.4 || ^7.0",
+        "symfony/routing": "^6.4 || ^7.0"
     },
     "suggest": {
         "symfony/framework-bundle": "Required to use the bundle in a Symfony application.",
-        "symfony/http-client": "Recommended — wires the SDK to Symfony's HTTP client via PSR-18."
+        "symfony/http-client": "Recommended — wires the SDK to Symfony's HTTP client via PSR-18.",
+        "symfony/cache": "Enables webhook deduplication via cache.app.",
+        "psr/log": "Logs inbound webhooks in GandoWebhookController."
     },
     "minimum-stability": "stable",
     "prefer-stable": true,

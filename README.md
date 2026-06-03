@@ -1,6 +1,6 @@
 # gando/partner-symfony
 
-Symfony bundle for the [Gando Partner PHP SDK](https://github.com/gando-app/gando-partner-php) (`gando/partner`). It registers the API client, optional Connect URL builder, and webhook HMAC verification via a `#[GandoWebhook]` attribute.
+Symfony bundle for the [Gando Partner PHP SDK](https://github.com/gando-app/gando-partner-php) (`gando/partner`). It registers the API client, optional Connect URL builder, a **ready-to-wire webhook controller**, and optional `#[GandoWebhook]` attribute verification.
 
 ## Requirements
 
@@ -8,7 +8,7 @@ Symfony bundle for the [Gando Partner PHP SDK](https://github.com/gando-app/gand
 - Symfony 6.4 LTS or 7.x
 - `gando/partner` ^0.1.5
 
-Recommended: `symfony/http-client` so the SDK uses Symfony's HTTP client through PSR-18.
+Recommended: `symfony/http-client`, `symfony/framework-bundle`, `symfony/cache` (webhook dedup).
 
 ## Installation
 
@@ -40,6 +40,8 @@ gando_partner:
     webhooks:
         secret: '%env(GANDO_WEBHOOK_SECRET)%'
         tolerance_seconds: 300
+        path: /webhooks/gando
+        dedup_ttl_seconds: 86400
 ```
 
 | Option | Description |
@@ -49,10 +51,12 @@ gando_partner:
 | `connect.secret` | Connect signing secret (`gando_cs_…`) |
 | `connect.partner_slug` | Slug in connect URLs |
 | `connect.base_url` | Dashboard base URL (default `https://dashboard.gando.app`) |
-| `webhooks.secret` | Webhook signing secret (`gando_whsec_…`) |
+| `webhooks.secret` | Webhook signing secret (`whsec_…` or `gando_whsec_…`) |
 | `webhooks.tolerance_seconds` | Max webhook age in seconds (default `300`) |
+| `webhooks.path` | Route path for bundled webhook controller (default `/webhooks/gando`) |
+| `webhooks.dedup_ttl_seconds` | Dedup window when `cache.app` is present (default `86400`) |
 
-`connect` and `webhooks` sections are optional. Omit `connect` if you only use the API client. Configure `webhooks.secret` when using `#[GandoWebhook]`.
+`connect` and `webhooks` sections are optional. Configure `webhooks.secret` to enable the bundled webhook controller.
 
 ## Usage
 
@@ -84,39 +88,64 @@ When `connect` is configured, inject `Gando\Partner\Connect\UrlBuilder`:
 $url = $this->urlBuilder->signupUrl(externalId: 'fleet_acct_42');
 ```
 
-### Webhook endpoint
+### Webhook endpoint (recommended — 2 lines)
 
-Mark a controller action with `#[GandoWebhook]`. The bundle verifies `X-Gando-Signature` and `X-Gando-Timestamp` before your code runs. Invalid signatures return **400** with an empty body (same behaviour as the SDK recipe).
+**Route** (`config/routes/gando_partner.yaml`):
+
+```yaml
+gando_partner_webhook:
+    path: /webhooks/gando
+    controller: gando.partner.webhook_controller
+    methods: [POST]
+```
+
+The bundle also auto-imports `config/routes/webhook.php` with path `%gando_partner.webhooks.path%`.
+
+**Handler** — subscribe to typed events:
 
 ```php
-use Gando\Partner\Symfony\Attribute\GandoWebhook;
-use Symfony\Component\HttpFoundation\Request;
-use Symfony\Component\HttpFoundation\Response;
-use Symfony\Component\Routing\Attribute\Route;
+use Gando\Partner\Symfony\Event\DepositActivated;
+use Symfony\Component\EventDispatcher\Attribute\AsEventListener;
 
-final class GandoWebhookController
+#[AsEventListener]
+final class SyncDepositOnActivation
 {
-    #[Route('/webhooks/gando', methods: ['POST'])]
-    #[GandoWebhook]
-    public function __invoke(Request $request): Response
+    public function __invoke(DepositActivated $event): void
     {
-        $payload = json_decode($request->getContent(), true, flags: JSON_THROW_ON_ERROR);
-
-        // Process $payload asynchronously when possible.
-
-        return new Response('', Response::HTTP_NO_CONTENT);
+        // Dispatch to Messenger / queue — keep this fast.
     }
 }
 ```
 
-Request attributes set on success:
+| Class | Gando event (`partner-webhook.service`) |
+| --- | --- |
+| `Gando\Partner\Symfony\Controller\GandoWebhookController` | HTTP ingress — verify, dedup, dispatch, 200 |
+| `Gando\Partner\Symfony\Event\WebhookReceived` | All verified webhooks (always first) |
+| `Gando\Partner\Symfony\Event\RentalOperatorLinked` | `rental_operator.linked` |
+| `Gando\Partner\Symfony\Event\DepositStatusChanged` | `caution.status_changed` |
+| `Gando\Partner\Symfony\Event\DepositActivated` | `caution.activated` |
+| `Gando\Partner\Symfony\Event\DepositCaptured` | `caution.captured` |
+| `Gando\Partner\Symfony\Event\DepositExpired` | `caution.expired` |
+| `Gando\Partner\Symfony\Event\DepositCancelled` | `caution.cancelled` |
 
-- `_gando_webhook.verified` — `true`
-- `_gando_webhook.event` — value of `X-Gando-Event`
+Full walkthrough: [docs/recipes/webhook.md](docs/recipes/webhook.md) (async processing with Messenger, dedup, endpoint creation).
 
-Use `$request->getContent()` for the raw body; avoid middleware that consumes the body before the `kernel.controller` event.
+### Webhook attribute (custom controllers)
 
-Override the secret per action: `#[GandoWebhook(secret: '%env(GANDO_OTHER_WEBHOOK_SECRET)%')]`.
+Mark your own action with `#[GandoWebhook]` if you do not use the bundled controller. Verification runs on `kernel.controller` before your code.
+
+```php
+use Gando\Partner\Symfony\Attribute\GandoWebhook;
+
+#[Route('/custom/webhook', methods: ['POST'])]
+#[GandoWebhook]
+public function __invoke(Request $request): Response
+{
+    // ...
+}
+```
+
+Invalid signatures return **400** with an empty body.
 
 ## HTTP client integration
 
@@ -124,8 +153,9 @@ When Symfony's `http_client` service exists and `symfony/http-client` is install
 
 ## Further reading
 
-- [Gando Partner PHP SDK](https://github.com/gando-app/gando-partner-php) — API reference, error handling, idempotency
+- [Gando Partner PHP SDK](https://github.com/gando-app/gando-partner-php) — API reference, error handling
 - [Partner API docs](https://gando.app/docs) — OpenAPI / Scalar
+- [Webhook recipe](docs/recipes/webhook.md) — end-to-end Symfony setup
 
 ## License
 
