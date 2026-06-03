@@ -25,7 +25,7 @@ final class GandoPartnerExtension extends Extension
 
         $this->validateApiKeyPrefix($config['api_key']);
 
-        $loader = new PhpFileLoader($container, new FileLocator(\dirname(__DIR__, 2).'/config'));
+        $loader = new PhpFileLoader($container, new FileLocator(\dirname(__DIR__, 2) . '/config'));
         $loader->load('services.php');
 
         $container->setParameter('gando_partner.webhooks.tolerance_seconds', $config['webhooks']['tolerance_seconds']);
@@ -161,9 +161,9 @@ final class GandoPartnerExtension extends Extension
 
     private function validateWebhookSecretPrefix(string $secret): void
     {
-        if (! str_starts_with($secret, 'gando_whsec_')) {
+        if (! str_starts_with($secret, 'whsec_')) {
             throw new \InvalidArgumentException(
-                'gando_partner.webhooks.secret must start with "gando_whsec_".',
+                'gando_partner.webhooks.secret must start with "whsec_".',
             );
         }
     }
