@@ -6,7 +6,7 @@ namespace Gando\Partner\Symfony\Event;
 
 use Gando\Partner\Symfony\Webhook\WebhookPayload;
 
-/** {@see PartnerWebhookEvent::CautionStatusChanged} — wildcard for any deposit status transition. */
+/** {@see PartnerWebhookEvent::DepositStatusChanged} — wildcard for any deposit status transition. */
 final class DepositStatusChanged
 {
     public function __construct(

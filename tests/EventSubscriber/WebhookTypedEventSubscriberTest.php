@@ -89,32 +89,32 @@ final class WebhookTypedEventSubscriberTest extends TestCase
             ],
         ];
 
-        yield PartnerWebhookEvent::CautionStatusChanged->value => [
-            'caution.status_changed',
+        yield PartnerWebhookEvent::DepositStatusChanged->value => [
+            'deposit.status_changed',
             DepositStatusChanged::class,
             ['id' => 'dep_1', 'status' => 'pending', 'previous_status' => 'draft'],
         ];
 
-        yield PartnerWebhookEvent::CautionActivated->value => [
-            'caution.activated',
+        yield PartnerWebhookEvent::DepositActivated->value => [
+            'deposit.activated',
             DepositActivated::class,
             ['id' => 'dep_1', 'status' => 'active', 'previous_status' => 'pending'],
         ];
 
-        yield PartnerWebhookEvent::CautionCaptured->value => [
-            'caution.captured',
+        yield PartnerWebhookEvent::DepositCaptured->value => [
+            'deposit.captured',
             DepositCaptured::class,
             ['id' => 'dep_1', 'status' => 'captured', 'previous_status' => 'active'],
         ];
 
-        yield PartnerWebhookEvent::CautionExpired->value => [
-            'caution.expired',
+        yield PartnerWebhookEvent::DepositExpired->value => [
+            'deposit.expired',
             DepositExpired::class,
             ['id' => 'dep_1', 'status' => 'close', 'previous_status' => 'active'],
         ];
 
-        yield PartnerWebhookEvent::CautionCancelled->value => [
-            'caution.cancelled',
+        yield PartnerWebhookEvent::DepositCancelled->value => [
+            'deposit.cancelled',
             DepositCancelled::class,
             ['id' => 'dep_1', 'status' => 'cancelled', 'previous_status' => 'active'],
         ];

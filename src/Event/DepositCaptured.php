@@ -6,7 +6,7 @@ namespace Gando\Partner\Symfony\Event;
 
 use Gando\Partner\Symfony\Webhook\WebhookPayload;
 
-/** {@see PartnerWebhookEvent::CautionCaptured} — deposit transitioned to {@code captured}. */
+/** {@see PartnerWebhookEvent::DepositCaptured} — deposit transitioned to {@code captured}. */
 final class DepositCaptured
 {
     public function __construct(

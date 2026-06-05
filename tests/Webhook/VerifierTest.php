@@ -14,17 +14,17 @@ final class VerifierTest extends TestCase
 
     public function testVerifyReturnsParsedPayload(): void
     {
-        $body = '{"event":"caution.activated","data":{"id":"dep_1","status":"active"}}';
+        $body = '{"event":"deposit.activated","data":{"id":"dep_1","status":"active"}}';
         $timestamp = (string) time();
         $headers = [
             'x-gando-signature' => [$this->sign($body, $timestamp)],
             'x-gando-timestamp' => [$timestamp],
-            'x-gando-event' => ['caution.activated'],
+            'x-gando-event' => ['deposit.activated'],
         ];
 
         $payload = (new Verifier(self::SECRET))->verify($body, $headers);
 
-        self::assertSame('caution.activated', $payload->event);
+        self::assertSame('deposit.activated', $payload->event);
         self::assertSame('dep_1', $payload->depositId());
         self::assertSame('active', $payload->depositStatus());
     }

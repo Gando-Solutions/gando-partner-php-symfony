@@ -6,7 +6,7 @@ Symfony bundle for the [Gando Partner PHP SDK](https://github.com/gando-app/gand
 
 - PHP 8.2+
 - Symfony 6.4 LTS or 7.x
-- `gando/partner` ^0.1.5
+- `gando/partner` ^0.1.7
 
 Recommended: `symfony/http-client`, `symfony/framework-bundle`, `symfony/cache` (webhook dedup).
 
@@ -122,11 +122,11 @@ final class SyncDepositOnActivation
 | `Gando\Partner\Symfony\Controller\GandoWebhookController` | HTTP ingress — verify, dedup, dispatch, 200 |
 | `Gando\Partner\Symfony\Event\WebhookReceived` | All verified webhooks (always first) |
 | `Gando\Partner\Symfony\Event\RentalOperatorLinked` | `rental_operator.linked` |
-| `Gando\Partner\Symfony\Event\DepositStatusChanged` | `caution.status_changed` |
-| `Gando\Partner\Symfony\Event\DepositActivated` | `caution.activated` |
-| `Gando\Partner\Symfony\Event\DepositCaptured` | `caution.captured` |
-| `Gando\Partner\Symfony\Event\DepositExpired` | `caution.expired` |
-| `Gando\Partner\Symfony\Event\DepositCancelled` | `caution.cancelled` |
+| `Gando\Partner\Symfony\Event\DepositStatusChanged` | `deposit.status_changed` |
+| `Gando\Partner\Symfony\Event\DepositActivated` | `deposit.activated` |
+| `Gando\Partner\Symfony\Event\DepositCaptured` | `deposit.captured` |
+| `Gando\Partner\Symfony\Event\DepositExpired` | `deposit.expired` |
+| `Gando\Partner\Symfony\Event\DepositCancelled` | `deposit.cancelled` |
 
 Full walkthrough: [docs/recipes/webhook.md](docs/recipes/webhook.md) (async processing with Messenger, dedup, endpoint creation).
 

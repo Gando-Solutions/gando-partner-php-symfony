@@ -44,11 +44,11 @@ final class WebhookTypedEventSubscriber implements EventSubscriberInterface
 
         $typedEvent = match ($partnerEvent) {
             PartnerWebhookEvent::RentalOperatorLinked => new RentalOperatorLinked($webhook),
-            PartnerWebhookEvent::CautionStatusChanged => new DepositStatusChanged($webhook),
-            PartnerWebhookEvent::CautionActivated => new DepositActivated($webhook),
-            PartnerWebhookEvent::CautionCaptured => new DepositCaptured($webhook),
-            PartnerWebhookEvent::CautionExpired => new DepositExpired($webhook),
-            PartnerWebhookEvent::CautionCancelled => new DepositCancelled($webhook),
+            PartnerWebhookEvent::DepositStatusChanged => new DepositStatusChanged($webhook),
+            PartnerWebhookEvent::DepositActivated => new DepositActivated($webhook),
+            PartnerWebhookEvent::DepositCaptured => new DepositCaptured($webhook),
+            PartnerWebhookEvent::DepositExpired => new DepositExpired($webhook),
+            PartnerWebhookEvent::DepositCancelled => new DepositCancelled($webhook),
         };
 
         $this->eventDispatcher->dispatch($typedEvent);

@@ -27,7 +27,7 @@ final class GandoWebhookControllerTest extends TestCase
             $received[] = $event;
         });
 
-        $body = '{"event":"caution.activated","data":{"id":"dep_99","status":"active"}}';
+        $body = '{"event":"deposit.activated","data":{"id":"dep_99","status":"active"}}';
         $request = $this->signedRequest($body);
 
         $response = $this->controller($dispatcher)->__invoke($request);
@@ -45,7 +45,7 @@ final class GandoWebhookControllerTest extends TestCase
             ++$count;
         });
 
-        $body = '{"event":"caution.activated","data":{"id":"dep_1","status":"active"}}';
+        $body = '{"event":"deposit.activated","data":{"id":"dep_1","status":"active"}}';
         $controller = $this->controller($dispatcher, withCache: true);
 
         $controller->__invoke($this->signedRequest($body));
@@ -95,7 +95,7 @@ final class GandoWebhookControllerTest extends TestCase
             server: [
                 'HTTP_X_GANDO_SIGNATURE' => $signature,
                 'HTTP_X_GANDO_TIMESTAMP' => $timestamp,
-                'HTTP_X_GANDO_EVENT' => 'caution.activated',
+                'HTTP_X_GANDO_EVENT' => 'deposit.activated',
             ],
         );
     }

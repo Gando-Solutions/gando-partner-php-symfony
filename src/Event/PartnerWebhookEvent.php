@@ -13,11 +13,11 @@ namespace Gando\Partner\Symfony\Event;
 enum PartnerWebhookEvent: string
 {
     case RentalOperatorLinked = 'rental_operator.linked';
-    case CautionStatusChanged = 'caution.status_changed';
-    case CautionActivated = 'caution.activated';
-    case CautionCaptured = 'caution.captured';
-    case CautionExpired = 'caution.expired';
-    case CautionCancelled = 'caution.cancelled';
+    case DepositStatusChanged = 'deposit.status_changed';
+    case DepositActivated = 'deposit.activated';
+    case DepositCaptured = 'deposit.captured';
+    case DepositExpired = 'deposit.expired';
+    case DepositCancelled = 'deposit.cancelled';
 
     public static function tryFromEventName(string $eventName): ?self
     {

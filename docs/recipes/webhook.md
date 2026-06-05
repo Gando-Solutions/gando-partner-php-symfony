@@ -43,11 +43,11 @@ The controller dispatches:
 | --- | --- |
 | `WebhookReceived` | Every verified webhook (always first) |
 | `RentalOperatorLinked` | `rental_operator.linked` — connect linked a rental operator |
-| `DepositStatusChanged` | `caution.status_changed` — wildcard status transition |
-| `DepositActivated` | `caution.activated` |
-| `DepositCaptured` | `caution.captured` |
-| `DepositExpired` | `caution.expired` — natural end (`close`) |
-| `DepositCancelled` | `caution.cancelled` — manual cancellation |
+| `DepositStatusChanged` | `deposit.status_changed` — wildcard status transition |
+| `DepositActivated` | `deposit.activated` |
+| `DepositCaptured` | `deposit.captured` |
+| `DepositExpired` | `deposit.expired` — natural end (`close`) |
+| `DepositCancelled` | `deposit.cancelled` — manual cancellation |
 
 Example subscribers:
 

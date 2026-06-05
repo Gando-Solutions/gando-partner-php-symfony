@@ -22,7 +22,7 @@ final class GandoWebhookListenerTest extends TestCase
     public function testValidSignatureSetsRequestAttributes(): void
     {
         $listener = new GandoWebhookListener(self::WEBHOOK_SECRET, 300);
-        $body = '{"event":"caution.activated"}';
+        $body = '{"event":"deposit.activated"}';
         $timestamp = (string) time();
         $request = $this->createSignedRequest($body, $timestamp);
         $event = $this->createControllerEvent($request, [new WebhookTestController(), 'protected']);
@@ -30,7 +30,7 @@ final class GandoWebhookListenerTest extends TestCase
         $listener->onKernelController($event);
 
         self::assertTrue($request->attributes->get(GandoWebhookListener::REQUEST_ATTR_VERIFIED));
-        self::assertSame('caution.activated', $request->attributes->get(GandoWebhookListener::REQUEST_ATTR_EVENT));
+        self::assertSame('deposit.activated', $request->attributes->get(GandoWebhookListener::REQUEST_ATTR_EVENT));
     }
 
     public function testInvalidSignatureThrows(): void
@@ -89,7 +89,7 @@ final class GandoWebhookListenerTest extends TestCase
             server: [
                 'HTTP_X_GANDO_SIGNATURE' => $this->sign($body, $timestamp),
                 'HTTP_X_GANDO_TIMESTAMP' => $timestamp,
-                'HTTP_X_GANDO_EVENT' => 'caution.activated',
+                'HTTP_X_GANDO_EVENT' => 'deposit.activated',
             ],
         );
     }
