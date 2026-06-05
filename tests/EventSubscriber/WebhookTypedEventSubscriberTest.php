@@ -4,12 +4,12 @@ declare(strict_types=1);
 
 namespace Gando\Partner\Symfony\Tests\EventSubscriber;
 
+use Gando\Partner\Models\Operations\EventType;
 use Gando\Partner\Symfony\Event\DepositActivated;
 use Gando\Partner\Symfony\Event\DepositCancelled;
 use Gando\Partner\Symfony\Event\DepositCaptured;
 use Gando\Partner\Symfony\Event\DepositExpired;
 use Gando\Partner\Symfony\Event\DepositStatusChanged;
-use Gando\Partner\Symfony\Event\PartnerWebhookEvent;
 use Gando\Partner\Symfony\Event\RentalOperatorLinked;
 use Gando\Partner\Symfony\Event\WebhookReceived;
 use Gando\Partner\Symfony\EventSubscriber\WebhookTypedEventSubscriber;
@@ -61,16 +61,44 @@ final class WebhookTypedEventSubscriberTest extends TestCase
     public function testRentalOperatorLinkedPayloadHelpers(): void
     {
         $payload = $this->payload('rental_operator.linked', [
-            'partner_id' => 'ptr_1',
-            'account_id' => 'acct_1',
-            'external_id' => 'fleet_42',
-            'linked_at' => '2026-03-02T10:00:00.000Z',
+            'partnerId' => 'ptr_1',
+            'accountId' => 'acct_1',
+            'externalId' => 'fleet_42',
+            'linkedAt' => '2026-03-02T10:00:00.000Z',
         ]);
 
         self::assertSame('acct_1', $payload->rentalOperatorAccountId());
         self::assertSame('fleet_42', $payload->rentalOperatorExternalId());
         self::assertSame('ptr_1', $payload->partnerId());
         self::assertSame('2026-03-02T10:00:00.000Z', $payload->linkedAt());
+        self::assertSame('2026-03-02T10:00:00.000Z', $payload->createdAt());
+    }
+
+    public function testDepositPayloadHelpers(): void
+    {
+        $payload = $this->payload('deposit.activated', [
+            'id' => 'dep_1',
+            'status' => 'active',
+            'previousStatus' => 'pending',
+            'rentalContract' => 'CTR-2026',
+            'amountCents' => 150_000,
+            'partnerContext' => [
+                'partnerId' => 'ptr_1',
+                'partnerName' => 'Fleetee',
+                'externalId' => 'fleet_42',
+            ],
+        ]);
+
+        self::assertSame('dep_1', $payload->depositId());
+        self::assertSame('active', $payload->depositStatus());
+        self::assertSame('pending', $payload->previousDepositStatus());
+        self::assertSame('CTR-2026', $payload->rentalContract());
+        self::assertSame(150_000, $payload->amountCents());
+        self::assertSame([
+            'partnerId' => 'ptr_1',
+            'partnerName' => 'Fleetee',
+            'externalId' => 'fleet_42',
+        ], $payload->partnerContext());
     }
 
     /**
@@ -78,45 +106,45 @@ final class WebhookTypedEventSubscriberTest extends TestCase
      */
     public static function partnerWebhookEventsProvider(): iterable
     {
-        yield PartnerWebhookEvent::RentalOperatorLinked->value => [
+        yield EventType::RentalOperatorLinked->value => [
             'rental_operator.linked',
             RentalOperatorLinked::class,
             [
-                'partner_id' => 'ptr_1',
-                'account_id' => 'acct_1',
-                'external_id' => 'ext_1',
-                'linked_at' => '2026-03-02T10:00:00.000Z',
+                'partnerId' => 'ptr_1',
+                'accountId' => 'acct_1',
+                'externalId' => 'ext_1',
+                'linkedAt' => '2026-03-02T10:00:00.000Z',
             ],
         ];
 
-        yield PartnerWebhookEvent::DepositStatusChanged->value => [
+        yield EventType::DepositStatusChanged->value => [
             'deposit.status_changed',
             DepositStatusChanged::class,
-            ['id' => 'dep_1', 'status' => 'pending', 'previous_status' => 'draft'],
+            ['id' => 'dep_1', 'status' => 'pending', 'previousStatus' => 'draft'],
         ];
 
-        yield PartnerWebhookEvent::DepositActivated->value => [
+        yield EventType::DepositActivated->value => [
             'deposit.activated',
             DepositActivated::class,
-            ['id' => 'dep_1', 'status' => 'active', 'previous_status' => 'pending'],
+            ['id' => 'dep_1', 'status' => 'active', 'previousStatus' => 'pending'],
         ];
 
-        yield PartnerWebhookEvent::DepositCaptured->value => [
+        yield EventType::DepositCaptured->value => [
             'deposit.captured',
             DepositCaptured::class,
-            ['id' => 'dep_1', 'status' => 'captured', 'previous_status' => 'active'],
+            ['id' => 'dep_1', 'status' => 'captured', 'previousStatus' => 'active'],
         ];
 
-        yield PartnerWebhookEvent::DepositExpired->value => [
+        yield EventType::DepositExpired->value => [
             'deposit.expired',
             DepositExpired::class,
-            ['id' => 'dep_1', 'status' => 'close', 'previous_status' => 'active'],
+            ['id' => 'dep_1', 'status' => 'close', 'previousStatus' => 'active'],
         ];
 
-        yield PartnerWebhookEvent::DepositCancelled->value => [
+        yield EventType::DepositCancelled->value => [
             'deposit.cancelled',
             DepositCancelled::class,
-            ['id' => 'dep_1', 'status' => 'cancelled', 'previous_status' => 'active'],
+            ['id' => 'dep_1', 'status' => 'cancelled', 'previousStatus' => 'active'],
         ];
     }
 
@@ -127,7 +155,7 @@ final class WebhookTypedEventSubscriberTest extends TestCase
     {
         $raw = (string) json_encode([
             'event' => $event,
-            'created_at' => '2026-03-02T10:00:00.000Z',
+            'createdAt' => '2026-03-02T10:00:00.000Z',
             'data' => $data,
         ], JSON_THROW_ON_ERROR);
 

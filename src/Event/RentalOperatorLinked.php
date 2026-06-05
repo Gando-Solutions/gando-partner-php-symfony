@@ -6,7 +6,7 @@ namespace Gando\Partner\Symfony\Event;
 
 use Gando\Partner\Symfony\Webhook\WebhookPayload;
 
-/** {@see PartnerWebhookEvent::RentalOperatorLinked} — connect flow linked a rental operator to the partner. */
+/** {@see \Gando\Partner\Models\Operations\EventType::RentalOperatorLinked} — connect flow linked a rental operator to the partner. */
 final class RentalOperatorLinked
 {
     public function __construct(

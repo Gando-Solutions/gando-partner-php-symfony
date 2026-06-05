@@ -6,7 +6,7 @@ namespace Gando\Partner\Symfony\Event;
 
 use Gando\Partner\Symfony\Webhook\WebhookPayload;
 
-/** {@see PartnerWebhookEvent::DepositExpired} — deposit transitioned to {@code close} (natural end). */
+/** {@see \Gando\Partner\Models\Operations\EventType::DepositExpired} — deposit transitioned to {@code close} (natural end). */
 final class DepositExpired
 {
     public function __construct(

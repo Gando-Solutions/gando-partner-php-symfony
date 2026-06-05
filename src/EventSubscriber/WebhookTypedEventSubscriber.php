@@ -4,12 +4,12 @@ declare(strict_types=1);
 
 namespace Gando\Partner\Symfony\EventSubscriber;
 
+use Gando\Partner\Models\Operations\EventType;
 use Gando\Partner\Symfony\Event\DepositActivated;
 use Gando\Partner\Symfony\Event\DepositCancelled;
 use Gando\Partner\Symfony\Event\DepositCaptured;
 use Gando\Partner\Symfony\Event\DepositExpired;
 use Gando\Partner\Symfony\Event\DepositStatusChanged;
-use Gando\Partner\Symfony\Event\PartnerWebhookEvent;
 use Gando\Partner\Symfony\Event\RentalOperatorLinked;
 use Gando\Partner\Symfony\Event\WebhookReceived;
 use Symfony\Component\EventDispatcher\EventDispatcherInterface;
@@ -36,19 +36,19 @@ final class WebhookTypedEventSubscriber implements EventSubscriberInterface
     public function onWebhookReceived(WebhookReceived $received): void
     {
         $webhook = $received->webhook;
-        $partnerEvent = PartnerWebhookEvent::tryFromEventName($webhook->event);
+        $eventType = EventType::tryFrom($webhook->event);
 
-        if ($partnerEvent === null) {
+        if ($eventType === null) {
             return;
         }
 
-        $typedEvent = match ($partnerEvent) {
-            PartnerWebhookEvent::RentalOperatorLinked => new RentalOperatorLinked($webhook),
-            PartnerWebhookEvent::DepositStatusChanged => new DepositStatusChanged($webhook),
-            PartnerWebhookEvent::DepositActivated => new DepositActivated($webhook),
-            PartnerWebhookEvent::DepositCaptured => new DepositCaptured($webhook),
-            PartnerWebhookEvent::DepositExpired => new DepositExpired($webhook),
-            PartnerWebhookEvent::DepositCancelled => new DepositCancelled($webhook),
+        $typedEvent = match ($eventType) {
+            EventType::RentalOperatorLinked => new RentalOperatorLinked($webhook),
+            EventType::DepositStatusChanged => new DepositStatusChanged($webhook),
+            EventType::DepositActivated => new DepositActivated($webhook),
+            EventType::DepositCaptured => new DepositCaptured($webhook),
+            EventType::DepositExpired => new DepositExpired($webhook),
+            EventType::DepositCancelled => new DepositCancelled($webhook),
         };
 
         $this->eventDispatcher->dispatch($typedEvent);
